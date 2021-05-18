@@ -28,6 +28,13 @@
     <connection>scm:git:ssh://git@git.itextsupport.com:7999/i7j/cleanup.git</connection>
     <url>https://git.itextsupport.com/projects/I7J/repos/cleanup</url>
   </scm>
+  <distributionManagement>
+    <repository>
+      <id>github</id>
+      <name>Nymiz lib Repo</name>
+      <url>https://maven.pkg.github.com/nymiz/libs/</url>
+    </repository>
+  </distributionManagement>
 
   <properties>
     <itext.version>${project.parent.version}</itext.version>
