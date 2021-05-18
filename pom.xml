@@ -5,7 +5,7 @@
   <parent>
     <groupId>com.itextpdf</groupId>
     <artifactId>root</artifactId>
-    <version>7.1.16-SNAPSHOT</version>
+    <version>7.1.15</version>
     <relativePath />
   </parent>
 
@@ -20,8 +20,7 @@
     with pdfSweep removes such data including any underlying information, making it impossible for such information to
     be recovered. With pdfSweep you can also redact drawings or parts of drawings you do not want your competition to
     see. PDF Data redaction with pdfSweep gives you the piece of mind that your companies confidential information
-    remains just that, confidential.
-  </description>
+    remains just that, confidential.</description>
   <url>https://itextpdf.com/products/itext-7/pdfsweep</url>
 
   <scm>
@@ -59,7 +58,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-imaging</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>1.0-alpha2</version>
     </dependency>
     <dependency>
       <groupId>com.itextpdf</groupId>
@@ -72,25 +71,14 @@
   <repositories>
     <repository>
       <releases>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
       </releases>
       <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-      <id>apache.snapshots</id>
-      <name>Apache Development Snapshot Repository</name>
-      <url>https://repository.apache.org/content/repositories/snapshots/</url>
-    </repository>
-    <repository>
-      <releases>
         <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
       </snapshots>
-      <id>itext-snapshot</id>
-      <name>iText Repository - snapshots</name>
-      <url>https://repo.itextsupport.com/snapshot</url>
+      <id>apache.releases</id>
+      <name>Apache Development Releases Repository</name>
+      <url>https://repository.apache.org/content/repositories/releases/</url>
     </repository>
     <repository>
       <releases>
