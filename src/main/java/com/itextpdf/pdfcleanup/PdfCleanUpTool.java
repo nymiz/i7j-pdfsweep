@@ -42,6 +42,15 @@
  */
 package com.itextpdf.pdfcleanup;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.itextpdf.io.source.PdfTokenizer;
 import com.itextpdf.io.source.RandomAccessFileOrArray;
 import com.itextpdf.io.source.RandomAccessSourceFactory;
@@ -61,7 +70,6 @@ import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfName;
 import com.itextpdf.kernel.pdf.PdfNumber;
-import com.itextpdf.kernel.pdf.PdfObject;
 import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfStream;
 import com.itextpdf.kernel.pdf.PdfString;
@@ -78,18 +86,14 @@ import com.itextpdf.layout.property.Property;
 import com.itextpdf.layout.property.TextAlignment;
 import com.itextpdf.pdfcleanup.events.PdfSweepEvent;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
  * Represents the main mechanism for cleaning a PDF document.
  */
 public class PdfCleanUpTool {
+  
+    /** The Constant logger. */
+    private static final Logger logger = LoggerFactory.getLogger(PdfCleanUpTool.class);
+
 
     /**
      * When a document with line arts is being cleaned up, there are lot of
@@ -254,25 +258,31 @@ public class PdfCleanUpTool {
         if (cleanUpLocations.size() == 0) {
             return;
         }
+        
+        // Surround with try catch so we can keep processing if a page fails
+        try {
+          List<Rectangle> regions = new ArrayList<>();
+          for (PdfCleanUpLocation cleanUpLocation : cleanUpLocations) {
+              regions.add(cleanUpLocation.getRegion());
+          }
 
-        List<Rectangle> regions = new ArrayList<>();
-        for (PdfCleanUpLocation cleanUpLocation : cleanUpLocations) {
-            regions.add(cleanUpLocation.getRegion());
+          PdfPage page = pdfDocument.getPage(pageNumber);
+          PdfCleanUpProcessor cleanUpProcessor = new PdfCleanUpProcessor(regions, pdfDocument);
+          
+          cleanUpProcessor.setFilteredImagesCache(filteredImagesCache);
+          cleanUpProcessor.processPageContent(page);
+          if (processAnnotations) {
+              cleanUpProcessor.processPageAnnotations(page, regions, redactAnnotations != null);
+          }
+
+          PdfCanvas pageCleanedContents = cleanUpProcessor.popCleanedCanvas();
+          page.put(PdfName.Contents, pageCleanedContents.getContentStream());
+          page.setResources(pageCleanedContents.getResources());
+
+          colorCleanedLocations(pageCleanedContents, cleanUpLocations);
+        } catch (Exception e) {
+          logger.error("** ERROR: Cleanup had errors when processing the page : - " + pageNumber + " -. Omitting " + cleanUpLocations.size() +  " cleans on redact *** : " + e.getMessage());
         }
-
-        PdfPage page = pdfDocument.getPage(pageNumber);
-        PdfCleanUpProcessor cleanUpProcessor = new PdfCleanUpProcessor(regions, pdfDocument);
-        cleanUpProcessor.setFilteredImagesCache(filteredImagesCache);
-        cleanUpProcessor.processPageContent(page);
-        if (processAnnotations) {
-            cleanUpProcessor.processPageAnnotations(page, regions, redactAnnotations != null);
-        }
-
-        PdfCanvas pageCleanedContents = cleanUpProcessor.popCleanedCanvas();
-        page.put(PdfName.Contents, pageCleanedContents.getContentStream());
-        page.setResources(pageCleanedContents.getResources());
-
-        colorCleanedLocations(pageCleanedContents, cleanUpLocations);
     }
 
     /**
@@ -447,7 +457,7 @@ public class PdfCleanUpTool {
         Map<String, List> parsedDA;
         try {
             parsedDA = parseDAParam(defaultAppearance);
-        }catch (NullPointerException npe){
+        } catch (NullPointerException npe){
             throw new PdfException(PdfException.DefaultAppearanceNotFound);
         }
         PdfFont font;
@@ -465,46 +475,47 @@ public class PdfCleanUpTool {
             canvas.openTag(new CanvasArtifact());
         }
 
-        Canvas modelCanvas = new Canvas(canvas, pdfDocument, annotRect, false);
-
-        Paragraph p = new Paragraph(overlayText).setFont(font).setFontSize(fontSize).setMargin(0);
-        TextAlignment textAlignment = TextAlignment.LEFT;
-        switch (justification) {
+        try (Canvas modelCanvas = new Canvas(canvas, pdfDocument, annotRect, false)){
+          Paragraph p = new Paragraph(overlayText).setFont(font).setFontSize(fontSize).setMargin(0);
+          TextAlignment textAlignment = TextAlignment.LEFT;
+          switch (justification) {
             case 1:
-                textAlignment = TextAlignment.CENTER;
-                break;
+              textAlignment = TextAlignment.CENTER;
+              break;
             case 2:
-                textAlignment = TextAlignment.RIGHT;
-                break;
+              textAlignment = TextAlignment.RIGHT;
+              break;
             default:
-        }
-        p.setTextAlignment(textAlignment);
-        List strokeColorArgs = parsedDA.get("StrokeColor");
-        if (strokeColorArgs != null) {
+          }
+          p.setTextAlignment(textAlignment);
+          List strokeColorArgs = parsedDA.get("StrokeColor");
+          if (strokeColorArgs != null) {
             p.setStrokeColor(getColor(strokeColorArgs));
-        }
-        List fillColorArgs = parsedDA.get("FillColor");
-        if (fillColorArgs != null) {
+          }
+          List fillColorArgs = parsedDA.get("FillColor");
+          if (fillColorArgs != null) {
             p.setFontColor(getColor(fillColorArgs));
-        }
-
-        modelCanvas.add(p);
-        if (repeat != null && repeat.getValue()) {
+          }
+          
+          modelCanvas.add(p);
+          if (repeat != null && repeat.getValue()) {
             boolean hasFull = modelCanvas.getRenderer().hasProperty(Property.FULL);
             boolean isFull = hasFull ? (boolean) modelCanvas.getRenderer().getPropertyAsBoolean(Property.FULL) : false;
             while (!isFull) {
-                p.add(overlayText);
-                LayoutArea previousArea = modelCanvas.getRenderer().getCurrentArea().clone();
-                modelCanvas.relayout();
-                if (modelCanvas.getRenderer().getCurrentArea().equals(previousArea)) {
-                    // Avoid infinite loop. This might be caused by the fact that the font does not support the text we want to show
-                    break;
-                }
-                hasFull = modelCanvas.getRenderer().hasProperty(Property.FULL);
-                isFull = hasFull ? (boolean) modelCanvas.getRenderer().getPropertyAsBoolean(Property.FULL) : false;
+              p.add(overlayText);
+              LayoutArea previousArea = modelCanvas.getRenderer().getCurrentArea().clone();
+              modelCanvas.relayout();
+              if (modelCanvas.getRenderer().getCurrentArea().equals(previousArea)) {
+                // Avoid infinite loop. This might be caused by the fact that the font does not support the text we want to show
+                break;
+              }
+              hasFull = modelCanvas.getRenderer().hasProperty(Property.FULL);
+              isFull = hasFull ? (boolean) modelCanvas.getRenderer().getPropertyAsBoolean(Property.FULL) : false;
             }
+          }
+          modelCanvas.getRenderer().flush();
         }
-        modelCanvas.getRenderer().flush();
+
 
         if (pdfDocument.isTagged()) {
             canvas.closeTag();

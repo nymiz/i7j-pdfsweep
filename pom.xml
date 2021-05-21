@@ -9,8 +9,8 @@
     <relativePath />
   </parent>
 
-  <artifactId>cleanup</artifactId>
-  <version>2.0.6.2</version>
+  <artifactId>nymiz-pdfsweep</artifactId>
+  <version>2.0.6.4</version>
 
   <name>pdfSweep</name>
   <description>Redact PDF documents. If you have to share PDFs with different departments or send them out of house, but they
