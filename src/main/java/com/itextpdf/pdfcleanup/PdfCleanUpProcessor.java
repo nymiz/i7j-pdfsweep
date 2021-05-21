@@ -721,7 +721,7 @@ public class PdfCleanUpProcessor extends PdfCanvasProcessor {
                     // Additional checks required as if an image format has been changed,
                     // then the old colorspace may produce an error with the new image data.
                     if (areColorSpacesDifferent(originalImage, imageToWrite)
-                            && CleanUpCsCompareUtil.isOriginalCsCompatible(originalImage, imageToWrite)) {
+                            /** on unknown images this fails && CleanUpCsCompareUtil.isOriginalCsCompatible(originalImage, imageToWrite)**/) {
                         PdfObject originalCS = originalImage.getPdfObject().get(PdfName.ColorSpace);
                         if (originalCS != null) {
                             imageToWrite.put(PdfName.ColorSpace, originalCS);

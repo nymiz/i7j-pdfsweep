@@ -42,13 +42,20 @@
  */
 package com.itextpdf.pdfcleanup;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.List;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.pdf.CompressionConstants;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.utils.CompareTool;
-import com.itextpdf.pdfcleanup.autosweep.CommonRegex;
 import com.itextpdf.pdfcleanup.autosweep.CompositeCleanupStrategy;
 import com.itextpdf.pdfcleanup.autosweep.PdfAutoSweep;
 import com.itextpdf.pdfcleanup.autosweep.RegexBasedCleanupStrategy;
@@ -56,16 +63,6 @@ import com.itextpdf.test.ExtendedITextTest;
 import com.itextpdf.test.annotations.LogMessage;
 import com.itextpdf.test.annotations.LogMessages;
 import com.itextpdf.test.annotations.type.IntegrationTest;
-
-import java.io.ByteArrayOutputStream;
-import java.util.List;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-
-import java.io.IOException;
 
 @Category(IntegrationTest.class)
 public class PdfAutoSweepTest extends ExtendedITextTest {
@@ -134,14 +131,13 @@ public class PdfAutoSweepTest extends ExtendedITextTest {
         CompositeCleanupStrategy strategy = new CompositeCleanupStrategy();
         strategy.add(new RegexBasedCleanupStrategy("(D|d)olor").setRedactionColor(ColorConstants.GREEN));
 
-        PdfDocument pdf = new PdfDocument(new PdfReader(input), new PdfWriter(output).setCompressionLevel(0));
-
-        // sweep
-        PdfAutoSweep autoSweep = new PdfAutoSweep(strategy);
-        autoSweep.tentativeCleanUp(pdf);
-
-        pdf.close();
-
+        try (PdfWriter writter = new PdfWriter(output) ;
+            PdfDocument pdf = new PdfDocument(new PdfReader(input), writter)) {
+          writter.setCompressionLevel(0);
+          // sweep
+          PdfAutoSweep autoSweep = new PdfAutoSweep(strategy);
+          autoSweep.tentativeCleanUp(pdf);
+        }
         // compare
         compareByContent(cmp, output, outputPath, "diff_tentativeCleanUp_");
     }
@@ -174,14 +170,13 @@ public class PdfAutoSweepTest extends ExtendedITextTest {
         CompositeCleanupStrategy strategy = new CompositeCleanupStrategy();
         strategy.add(new RegexBasedCleanupStrategy("(D|d)olor").setRedactionColor(ColorConstants.GREEN));
 
-        PdfDocument pdf = new PdfDocument(new PdfReader(input), new PdfWriter(output)
-                .setCompressionLevel(CompressionConstants.NO_COMPRESSION));
-
-        // sweep
-        PdfAutoSweep autoSweep = new PdfAutoSweep(strategy);
-        autoSweep.highlight(pdf);
-
-        pdf.close();
+        try (PdfWriter writter = new PdfWriter(output) ;
+            PdfDocument pdf = new PdfDocument(new PdfReader(input), writter)){
+          writter.setCompressionLevel(CompressionConstants.NO_COMPRESSION);
+          // sweep
+          PdfAutoSweep autoSweep = new PdfAutoSweep(strategy);
+          autoSweep.highlight(pdf);
+        }
 
         // compare
         compareByContent(cmp, output, outputPath, "diff_highlightTest_");
