@@ -71,10 +71,14 @@ public final class CleanUpImageUtil {
             byte[] wroteBytes = null;
             
             // If we have a unknown image we will threat it as it
-            if (format != null && format == ImageFormats.UNKNOWN) {
+            if (format == ImageFormats.UNKNOWN) {
               BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
-              cleanImage(image, areasToBeCleaned);
-              wroteBytes = Imaging.writeImageToBytes(image, ImageFormats.PNG, null);
+              
+              // Unknown format sometimes gives null readers, we have to control it
+              if (image != null) {
+                cleanImage(image, areasToBeCleaned);
+                wroteBytes = Imaging.writeImageToBytes(image, ImageFormats.PNG, null);
+              } 
             } else {
               final ImageInfo imageInfo = Imaging.getImageInfo(imageBytes);
               BufferedImage image = getBuffer(imageBytes, imageInfo.getFormat());

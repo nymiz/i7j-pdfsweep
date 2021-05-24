@@ -178,6 +178,9 @@ public class PdfCleanUpFilter {
         } else if (imageAreasToBeCleaned.isEmpty()) {
             return new FilterResult<>(false, null);
         }
+        
+        // We wont clean pdf in case something goes wrong
+        FilterResult<ImageData> filteredResult = new FilterResult<>(false, null);
 
         byte[] filteredImageBytes;
         if (imageSupportsDirectCleanup(image)) {
@@ -191,12 +194,21 @@ public class PdfCleanUpFilter {
             // direct image bytes cleaning approach would be found useful and will be preserved in future.
             PdfImageXObject tempImageClone = new PdfImageXObject((PdfStream) image.getPdfObject().clone());
             tempImageClone.getPdfObject().setData(imageStreamBytes);
+            
             filteredImageBytes = tempImageClone.getImageBytes();
         } else {
             byte[] originalImageBytes = image.getImageBytes();
+            
             filteredImageBytes = CleanUpImageUtil.cleanUpImage(originalImageBytes, imageAreasToBeCleaned);
         }
-        return new FilterResult<>(true, ImageDataFactory.create(filteredImageBytes));
+        
+        
+        // If filtered images are null, it means we could not recognize readers from it, wo we have to control it.
+        if (filteredImageBytes != null) {
+          filteredResult = new FilterResult<>(true, ImageDataFactory.create(filteredImageBytes));
+        } 
+        
+        return filteredResult;
     }
 
     /**
