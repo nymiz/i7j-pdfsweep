@@ -60,7 +60,7 @@ public class CleanUpImageUtilTest extends ExtendedITextTest {
         PdfImageXObject imageXObject = new PdfImageXObject(data);
         byte[] sourceImageBytes = imageXObject.getImageBytes();
 
-        byte[] resultImageBytes = CleanUpImageUtil.cleanUpImage(new PdfImageXObject(data).getImageBytes(),
+        byte[] resultImageBytes = CleanUpImageUtil.cleanUpImage(new PdfImageXObject(data),
                 new ArrayList<Rectangle>());
 
         Assert.assertArrayEquals(sourceImageBytes, resultImageBytes);

@@ -1,0 +1,74 @@
+plugins {
+	id 'java'
+	id 'maven-publish'
+	id "io.freefair.lombok" version "5.3.0"
+}
+
+group = 'com.itextpdf'
+version = '2.0.6.9'
+description = 'nymiz-pdfsweep'
+
+sourceCompatibility = '11'
+targetCompatibility = '11'
+
+ext {
+    group = "com.nymiz"
+    itextPdfVersion = "7.1.15"
+}
+
+configurations {
+	developmentOnly
+	runtimeClasspath {
+		extendsFrom developmentOnly
+	}
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+dependencies {
+	// Spring libs
+	implementation "com.itextpdf:io:${itextPdfVersion}"
+	implementation "com.itextpdf:kernel:${itextPdfVersion}"
+	implementation "com.itextpdf:layout:${itextPdfVersion}"
+	implementation "org.apache.commons:commons-imaging:1.0-alpha2"
+	implementation "org.apache.pdfbox:jbig2-imageio:3.0.3"
+	testImplementation "com.itextpdf:pdftest:${itextPdfVersion}"
+	
+	// Loombok
+	compileOnly "org.projectlombok:lombok"
+	annotationProcessor "org.projectlombok:lombok"
+}
+
+repositories {
+	mavenCentral()
+	maven {
+		name = "Itext release"
+		url = "https://repo.itextsupport.com/releases/"
+	}
+}
+
+task sourceJar(type: Jar) {
+    classifier 'sources'
+    from sourceSets.main.allJava
+}
+
+//publish to gitlab repository
+publishing {
+	publications {
+		library(MavenPublication) {
+			from components.java
+			artifact tasks.sourceJar
+		}
+	}
+	repositories {
+	    maven {
+	      name = "GitHubPackages"
+	      url = "https://maven.pkg.github.com/nymiz/libs/"
+	      credentials {
+	        username = 'nymiz'
+	        password = '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'
+	      }
+		}
+	}
+}

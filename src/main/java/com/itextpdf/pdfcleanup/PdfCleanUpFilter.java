@@ -197,16 +197,16 @@ public class PdfCleanUpFilter {
             
             filteredImageBytes = tempImageClone.getImageBytes();
         } else {
-            byte[] originalImageBytes = image.getImageBytes();
-            
-            filteredImageBytes = CleanUpImageUtil.cleanUpImage(originalImageBytes, imageAreasToBeCleaned);
+            filteredImageBytes = CleanUpImageUtil.cleanUpImage(image, imageAreasToBeCleaned);
         }
         
         
         // If filtered images are null, it means we could not recognize readers from it, wo we have to control it.
         if (filteredImageBytes != null) {
           filteredResult = new FilterResult<>(true, ImageDataFactory.create(filteredImageBytes));
-        } 
+        } else {
+          logger.error("** ERROR: Error happened when attempting to clean image/pdf page of type: - " + image.identifyImageType() + " - *** ");
+        }
         
         return filteredResult;
     }
