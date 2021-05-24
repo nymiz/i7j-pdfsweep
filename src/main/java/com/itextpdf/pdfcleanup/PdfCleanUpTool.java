@@ -281,7 +281,8 @@ public class PdfCleanUpTool {
 
           colorCleanedLocations(pageCleanedContents, cleanUpLocations);
         } catch (Exception e) {
-          logger.error("** ERROR: Cleanup had errors when processing the page : - " + pageNumber + " -. Omitting " + cleanUpLocations.size() +  " cleans on redact *** : " + e.getMessage());
+          String reason = (e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+          logger.error("** ERROR: Cleanup had errors when processing the page : - " + pageNumber + " -. Omitting " + cleanUpLocations.size() +  " cleans on redact *** : " + reason);
         }
     }
 
