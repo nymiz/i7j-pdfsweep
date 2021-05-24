@@ -66,8 +66,10 @@ publishing {
 	      name = "GitHubPackages"
 	      url = "https://maven.pkg.github.com/nymiz/libs/"
 	      credentials {
-	        username = 'nymiz'
-	        password = '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'
+	        if (project.hasProperty('gitHubPrivateToken')) {
+				username = "nymiz"
+				password = project.property('gitHubPrivateToken')
+			}
 	      }
 		}
 	}
